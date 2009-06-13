@@ -1,27 +1,5 @@
 <?php
 
-//  Description: JooMood WP Plugins - Retrieve Last X SE Popular Users
-//	Author: JooMood
-//	Version: 1.0
-//	Author URI: http://2cq.it/
-
-//	Copyright 2009, JooMOod
-//	-----------------------
-
-//	This program is free software: you can redistribute it and/or modify
-//	it under the terms of the GNU General Public License as published by
-//	the Free Software Foundation, either version 3 of the License, or
-//	(at your option) any later version.
-
-//	This program is distributed in the hope that it will be useful,
-//	but WITHOUT ANY WARRANTY; without even the implied warranty of
-//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//	GNU General Public License for more details.
-
-//	You should have received a copy of the GNU General Public License
-//	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------
 //					JOOMOOD START PLAYING
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -47,7 +25,7 @@ $show_time="no";
 $show_time="yes";
 }
 
-if($nametype=="1" OR $nametype=="2" OR $nametype=="3" OR $nametype=="4") {
+if($nametype=="0" OR $nametype=="1" OR $nametype=="2" OR $nametype=="3" OR $nametype=="4") {
 $nametypez=$nametype;
 } else {
 $nametypez="2";
@@ -146,6 +124,8 @@ $showt="no";
 
 
 // ---------------------------------------------------------
+
+		
 		
 		// Check Inner Box border style
 		
@@ -196,17 +176,20 @@ $showt="no";
 
 		// Mainbox Width
 
-		if($how_many_users>1) {
-		$myw=$mywidth*$how_many_users;
-		} else {
-		$myw="100%";
+		$mainboxwidth=$mainbox_width;
+		if ($mainboxwidth=="" || $mainboxwidth=="0") {
+		$mainboxwidth="100";
 		}
-
+		
+		if($how_many_users=="1") {
+		$mytbl=$mywidth;
+		} else {
+		$mytbl=floor($mainboxwidth/$how_many_users);
+		}
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------
 //					LET'S START QUERY TO RETRIEVE OUR DATA
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 
 $query  = "SELECT count(se_friends.friend_user_id2) AS num_friends, se_users.user_id, 
@@ -232,12 +215,18 @@ $myn=$row['user_displayname'];
 } else if ($nametypez=="1"){
 $mynome=$row['user_username'];
 $myn=$row['user_username'];
+} else if ($nametypez=="0"){
+$mynome=$row['user_username'];
+$myn=$row['user_username'];
 } else if ($nametypez=="3"){
 $mynome=$row['user_fname'];
 $myn=$row['user_fname'];
-} else {
+} else if ($nametypez=="4"){
 $mynome=$row['user_lname'];
 $myn=$row['user_lname'];
+} else {
+$mynome=$row['user_username'];
+$myn=$row['user_username'];
 }
 
 if(strlen($mynome)>$max_lenght_name){
@@ -246,9 +235,9 @@ $mynome = substr($mynome,0,$max_lenght_name)."_";
 
 
 if ($shown=="no") {
-$my_string="";
+$my_string="<tr><td align=\"center\" scope=\"row\">";
 } else {
-$my_string="<tr><td align=\"center\" scope=\"row\"><font color=\"{$name_color}\">{$mynome}</font></td></tr>";
+$my_string="<tr><td align=\"center\" scope=\"row\"><font color=\"{$name_color}\">{$mynome}</font><br />";
 }
 
 
@@ -260,27 +249,49 @@ $friendtext="friends";
 }
 
 $mydir=$wpdir."/wp-content/plugins/wp-se_popular";
+$subdir = $row['user_id']+999-(($row['user_id']-1)%1000);
+
+if($use_resize !=="no") { // RESIZING SCRIPT
 
 if ($row['user_photo']!='') {
-
 // Creates a thumbnail based on your personal dims (width/height), without stretching the original pic
-
-$mypic="<img src=\"{$mydir}/image.php/{$row['user_photo']}?width={$mywidth}&amp;height={$myheight}&amp;cropratio=1:1&amp;quality=100&amp;image={$socialdir}/uploads_user/1000/{$row['user_id']}/{$row['user_photo']}\" style=\"border:".$image_border."px solid ".$image_bordercolor."\" alt=\"".$myn."\" />";
+$mypic="<img src=\"{$mydir}/image.php/{$row['user_photo']}?width={$mywidth}&amp;height={$myheight}&amp;cropratio=1:1&amp;quality=100&amp;image={$socialdir}/uploads_user/{$subdir}/{$row['user_id']}/{$row['user_photo']}\" style=\"border:".$image_border."px solid ".$image_bordercolor."\" alt=\"".$myn."\" />";
 } else {
 $mypic="<img src=\"{$mydir}/image.php/nophoto.gif?width={$mywidth}&amp;height={$myheight}&amp;cropratio=1:1&amp;quality=100&amp;image={$socialdir}/{$empty_image_url}\" style=\"border:".$image_border."px ".$image_bordercolor." solid\" alt=\"".$myn."\" />";
+}
+
+} else { // NO RESIZING SCRIPT
+
+if ($row['user_photo']!='') {
+// Creates a thumbnail based on your personal dims (width/height)
+$myp=str_replace(".", "_thumb.", $row['user_photo']);
+$mypfile=$socialdir."/uploads_user/{$subdir}/{$row['user_id']}/{$myp}";
+
+if (@fopen($mypfile, "r")) {
+$myps=str_replace(".", "_thumb.", $row['user_photo']);
+$mypfile=$socialdir."/uploads_user/{$subdir}/{$row['user_id']}/{$myps}";
+} else {
+$mypfile=$socialdir."/uploads_user/{$subdir}/{$row['user_id']}/{$row['user_photo']}";
+}
+
+$mypic="<img src=\"{$mypfile}\" width=\"{$mywidth}\" height=\"{$myheight}\" style=\"border:".$image_border."px solid ".$image_bordercolor."\" alt=\"".$myn."\" />";
+} else {
+$mypic="<img src=\"{$socialdir}/{$empty_image_url}\" width=\"{$mywidth}\" height=\"{$myheight}\" style=\"border:".$image_border."px ".$image_bordercolor." solid\" alt=\"".$myn."\" />";
+}
+
 }
 
 
 if($i<$how_many_users) {
 
 $rows .= "
-<td valign=\"top\">
-<table width=\"".$mywidth."\" cellspacing=\"{$inner_cellspacing}\" cellpadding=\"{$inner_cellpadding}\" ".$mystyle.">
+<td valign=\"top\" align=\"left\">
+<table width=\"100%\" cellspacing=\"{$inner_cellspacing}\" cellpadding=\"{$inner_cellpadding}\" ".$mystyle.">
 <tr>
-<td width=\"".$mywidth."\" align=\"center\" valign=\"top\" scope=\"row\"><a href='".$socialdir."/profile.php?user_id=".$row['user_id']."' title='{$go_profile_text} ".$myn."'>".$mypic."</a></td>
+<td width=\"".$mytbl."%\" align=\"center\" valign=\"top\" scope=\"row\"><a href='".$socialdir."/profile.php?user_id=".$row['user_id']."' title='{$go_profile_text} ".$myn."'>".$mypic."</a></td>
 </tr>
 {$my_string}
-<tr><td align=\"center\"><small>{$row['num_friends']} {$friendtext}</small></td></tr>
+<center><small>{$row['num_friends']} {$friendtext}</small></center></td></tr>
 </table>
 </td>
 ";
@@ -288,13 +299,13 @@ $rows .= "
 } else {
 
 $rows .= "
-</tr><tr><td>
-<table width=\"".$mywidth."\" cellspacing=\"{$inner_cellspacing}\" cellpadding=\"{$inner_cellpadding}\" ".$mystyle.">
+</tr><tr><td valign=\"top\" align=\"left\">
+<table width=\"100%\" cellspacing=\"{$inner_cellspacing}\" cellpadding=\"{$inner_cellpadding}\" ".$mystyle.">
 <tr>
-<td width=\"".$mywidth."\" align=\"center\" valign=\"top\" scope=\"row\"><a href='".$socialdir."/profile.php?user_id=".$row['user_id']."' title='{$go_profile_text} ".$myn."'>".$mypic."</a></td>
+<td width=\"".$mytbl."%\" align=\"center\" valign=\"top\" scope=\"row\"><a href='".$socialdir."/profile.php?user_id=".$row['user_id']."' title='{$go_profile_text} ".$myn."'>".$mypic."</a></td>
 </tr>
 {$my_string}
-<tr><td align=\"center\"><small>{$row['num_friends']} {$friendtext}</small></td></tr>
+<center><small>{$row['num_friends']} {$friendtext}</small></center></td></tr>
 </table>
 </td>
 ";
@@ -305,8 +316,8 @@ $i=0;
 $i++;
 
 }
-
-$content .="<table width=\"{$myw}\" cellspacing=\"{$outer_cellspacing}\" cellpadding=\"{$outer_cellpadding}\" {$mymainstyle}><tr>";
+$mbox=$mainboxwidth."%";
+$content .="<table width=\"{$mbox}\" cellspacing=\"{$outer_cellspacing}\" cellpadding=\"{$outer_cellpadding}\" {$mymainstyle}><tr>";
 $content .="{$rows}";
 $content .="</tr></table>";
 
